@@ -1,0 +1,24 @@
+1)
+run it
+
+2)
+i:1  process ID:9436 
+            v
+            v
+i:2  process ID:9437
+            v
+            v
+i:3  process ID:9438
+            v
+            v
+i:4  process ID:9439
+
+3)
+Experiment with different numbers of processes, observe the processes adopted by init. what is the maximum amount of processes?
+	most processes are adopted by init, I was unable to reach a maximum.
+
+4)
+Place sleep(10) before the fprintf. What is the maximum number of processes?
+	I'm not sure I don't really want to test it since I'll have to 
+	wait 10n quantums approximately to see the end result. 
+

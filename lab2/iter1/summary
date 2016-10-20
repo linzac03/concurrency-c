@@ -1,0 +1,19 @@
+1)
+run it
+
+2)
+i:1  process ID:9436 
+            v
+            v
+i:2  process ID:9437
+            v
+            v
+i:3  process ID:9438
+            v
+            v
+i:4  process ID:9439
+
+3)
+most processes are adopted by init, I was unable to reach a maximum.
+
+

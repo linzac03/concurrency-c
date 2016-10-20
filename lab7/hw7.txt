@@ -1,0 +1,204 @@
+copydirectory.c Code:
+void *copyfilepass(void *arg);
+
+void *copydirectory(void *arg) {
+	fprintf(stdout, "Received arg %s\n", (char *)arg);
+	char * args = (char *)arg;	
+	char *from = strtok(args, "|");	
+	char *to = strtok(NULL, "|");
+	DIR *fromdir = opendir(from);
+	DIR *todir = opendir(to);
+ 	struct dirent *ent = NULL;
+	int fds[2];
+	int error;
+	char tmp[MAXNAME+MAXNAME];
+	pthread_t tid;
+
+	if (fromdir == NULL || todir == NULL) {
+		fprintf(stderr, "Failed to open directories %s %s \n", from, to);	
+		return 1;	
+	}
+
+	fprintf(stdout, "Directory %s opened\n", from);	
+	fprintf(stdout, "Directory %s opened\n", to);	
+	while((ent = readdir(fromdir)) != NULL) {
+		if (ent->d_type == DT_DIR) {
+			continue;
+		} else {
+			memset((void *)tmp, 0, MAXNAME+MAXNAME);
+			strcat(tmp, from);	
+			strcat(tmp, &ent->d_name[0]);	
+			fprintf(stdout, "Attempting to open: %s\n", tmp);	
+			if (((fds[0] = open(tmp, READ_FLAGS)) == -1)) {
+					perror("Failed to open the file");
+					return 1;
+			}
+			
+			memset((void *)tmp, 0, MAXNAME+MAXNAME);
+			strcat(tmp, to);	
+			strcat(tmp, &ent->d_name[0]);	
+			
+			fprintf(stdout, "Attempting to copy to: %s\n", tmp);	
+			if ((fds[1] = open(
+				tmp, O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH)) == -1) {
+				perror("Failed to create new file");	
+				return 1;
+			}
+
+			if (error = pthread_create(&tid, NULL, copyfilepass, fds)) {
+				fprintf(stderr, "Failed to create thread: %s\n", strerror(error));
+				return 1;
+			}
+			if (error = pthread_join(tid, (void **)NULL)) {
+				fprintf(stderr, "Failed to join thread: %s\n", strerror(error));
+				return 1;
+			}
+		}	
+	}
+	closedir(fromdir);
+	closedir(todir);
+	return 0;
+}
+
+main.c Code:
+void *copydirectory(void *arg);
+
+int main(int argc, char **argv) {
+	char *tmp;
+	int error;
+	int *bytesptr;
+	pthread_t tid;
+	
+	if (argc != 3) {
+		printf("Usage copydirectory [fromdir] [todir]\n");
+	}
+	tmp = malloc(sizeof(argv[1])+sizeof(argv[2])+2);
+	strcat(tmp,argv[1]);
+	strcat(tmp,"|");
+	strcat(tmp,argv[2]);
+	if (error = pthread_create(&tid, NULL, copydirectory, tmp)) {
+  	fprintf(stderr, "Failed to create thread: %s\n", strerror(error));
+  	return 1;
+	}
+	
+	if (error = pthread_join(tid, (void **)NULL)) {
+		fprintf(stderr, "Failed to join thread: %s\n", strerror(error));
+		return 1;
+	}
+	return 0;
+}
+
+Summary:
+This lab was fairly straight forward, for each file in a directory spawn a thread to copy it to another directory. A function to handle copying the file was given to us, so all we had to do was handle the threads. So, in main we create a new thread that runs copydirectory, which also creates new threads for each file present in the directory to be copied. All threads also call join to wait for completion. 
+Instead of printing the amount of bytes copied, I opted for just doing an ls -l on each directory and comparing the differences.
+I may be overlooking something however since I don't really understand why when I run copydirectory the threads don't have permission to create new files, thus the sudo below.
+...Actually I just ran it again without the sudo and it worked.
+hmmmmmm....
+
+01:19 AM [porko@kame-house:lab7] sudo ./copydirectory tar/ tar2/
+Received arg tar/|tar2/
+Directory tar/ opened
+Directory tar2/ opened
+Attempting to open: tar/makefile
+Attempting to copy to: tar2/makefile
+Attempting to open: tar/monitorfd.c
+Attempting to copy to: tar2/monitorfd.c
+Attempting to open: tar/detachfuntest.c
+Attempting to copy to: tar2/detachfuntest.c
+Attempting to open: tar/whichexit.c
+Attempting to copy to: tar2/whichexit.c
+Attempting to open: tar/badparameters.c
+Attempting to copy to: tar2/badparameters.c
+Attempting to open: tar/callcopypass.c
+Attempting to copy to: tar2/callcopypass.c
+Attempting to open: tar/copymultiple.c
+Attempting to copy to: tar2/copymultiple.c
+Attempting to open: tar/restart.h
+Attempting to copy to: tar2/restart.h
+Attempting to open: tar/README
+Attempting to copy to: tar2/README
+Attempting to open: tar/copyfilemalloc.c
+Attempting to copy to: tar2/copyfilemalloc.c
+Attempting to open: tar/convertlinux
+Attempting to copy to: tar2/convertlinux
+Attempting to open: tar/makepriority.c
+Attempting to copy to: tar2/makepriority.c
+Attempting to open: tar/callcopymalloc.c
+Attempting to copy to: tar2/callcopymalloc.c
+Attempting to open: tar/detachfun.c
+Attempting to copy to: tar2/detachfun.c
+Attempting to open: tar/usp_ch12.tar
+Attempting to copy to: tar2/usp_ch12.tar
+Attempting to open: tar/monitorfdcanceltest.c
+Attempting to copy to: tar2/monitorfdcanceltest.c
+Attempting to open: tar/convertlinux.ed
+Attempting to copy to: tar2/convertlinux.ed
+Attempting to open: tar/makeprioritytest.c
+Attempting to copy to: tar2/makeprioritytest.c
+Attempting to open: tar/processfdcancel.c
+Attempting to copy to: tar2/processfdcancel.c
+Attempting to open: tar/monitorfdtest.c
+Attempting to copy to: tar2/monitorfdtest.c
+Attempting to open: tar/copyfilepass.c
+Attempting to copy to: tar2/copyfilepass.c
+Attempting to open: tar/processfd.c
+Attempting to copy to: tar2/processfd.c
+Attempting to open: tar/monitorfdcancel.c
+Attempting to copy to: tar2/monitorfdcancel.c
+Attempting to open: tar/restart.c
+Attempting to copy to: tar2/restart.c
+
+01:25 AM [porko@kame-house:lab7] ls -l tar/
+total 140
+-rw-r--r-- 1 porko porko  1706 May 25 00:55 badparameters.c
+-rw-r--r-- 1 porko porko  1090 May 25 00:45 callcopymalloc.c
+-rw-r--r-- 1 porko porko  1065 May 25 00:55 callcopypass.c
+-rwxr-xr-x 1 porko porko   680 May 25 00:46 convertlinux
+-rw-r--r-- 1 porko porko    40 May 21  2003 convertlinux.ed
+-rw-r--r-- 1 porko porko   411 May 21  2003 copyfilemalloc.c
+-rw-r--r-- 1 porko porko   234 May 25 00:54 copyfilepass.c
+-rw-r--r-- 1 porko porko  2877 May 25 00:55 copymultiple.c
+-rw-r--r-- 1 porko porko   222 May 21  2003 detachfun.c
+-rw-r--r-- 1 porko porko   283 May 25 00:55 detachfuntest.c
+-rw-r--r-- 1 porko porko  2273 May 25 00:55 makefile
+-rw-r--r-- 1 porko porko   680 May 21  2003 makepriority.c
+-rw-r--r-- 1 porko porko   936 May 21  2003 makeprioritytest.c
+-rw-r--r-- 1 porko porko   943 May 25 00:47 monitorfd.c
+-rw-r--r-- 1 porko porko  1614 May 25 00:54 monitorfdcancel.c
+-rw-r--r-- 1 porko porko   625 May 21  2003 monitorfdcanceltest.c
+-rw-r--r-- 1 porko porko   613 May 25 00:54 monitorfdtest.c
+-rw-r--r-- 1 porko porko   798 May 25 00:54 processfd.c
+-rw-r--r-- 1 porko porko   592 May 21  2003 processfdcancel.c
+-rw-r--r-- 1 porko porko   538 May 25 00:47 README
+-rw-r--r-- 1 porko porko  5706 May 25 00:55 restart.c
+-rw-r--r-- 1 porko porko   865 May 21  2003 restart.h
+-rw-rw-r-- 1 porko porko 42496 Mar 29  2004 usp_ch12.tar
+-rw-r--r-- 1 porko porko   620 May 25 00:54 whichexit.c
+
+01:25 AM [porko@kame-house:lab7] ls -l tar2/
+total 140
+-r--r--r-- 1 porko porko  1706 Jun  4 01:19 badparameters.c
+-r--r--r-- 1 porko porko  1090 Jun  4 01:19 callcopymalloc.c
+-r--r--r-- 1 porko porko  1065 Jun  4 01:19 callcopypass.c
+-r--r--r-- 1 porko porko   680 Jun  4 01:19 convertlinux
+-r--r--r-- 1 porko porko    40 Jun  4 01:19 convertlinux.ed
+-r--r--r-- 1 porko porko   411 Jun  4 01:19 copyfilemalloc.c
+-r--r--r-- 1 porko porko   234 Jun  4 01:19 copyfilepass.c
+-r--r--r-- 1 porko porko  2877 Jun  4 01:19 copymultiple.c
+-r--r--r-- 1 porko porko   222 Jun  4 01:19 detachfun.c
+-r--r--r-- 1 porko porko   283 Jun  4 01:19 detachfuntest.c
+-r--r--r-- 1 porko porko  2273 Jun  4 01:19 makefile
+-r--r--r-- 1 porko porko   680 Jun  4 01:19 makepriority.c
+-r--r--r-- 1 porko porko   936 Jun  4 01:19 makeprioritytest.c
+-r--r--r-- 1 porko porko   943 Jun  4 01:19 monitorfd.c
+-r--r--r-- 1 porko porko  1614 Jun  4 01:19 monitorfdcancel.c
+-r--r--r-- 1 porko porko   625 Jun  4 01:19 monitorfdcanceltest.c
+-r--r--r-- 1 porko porko   613 Jun  4 01:19 monitorfdtest.c
+-r--r--r-- 1 porko porko   798 Jun  4 01:19 processfd.c
+-r--r--r-- 1 porko porko   592 Jun  4 01:19 processfdcancel.c
+-r--r--r-- 1 porko porko   538 Jun  4 01:19 README
+-r--r--r-- 1 porko porko  5706 Jun  4 01:19 restart.c
+-r--r--r-- 1 porko porko   865 Jun  4 01:19 restart.h
+-r--r--r-- 1 porko porko 42496 Jun  4 01:19 usp_ch12.tar
+-r--r--r-- 1 porko porko   620 Jun  4 01:19 whichexit.c
+

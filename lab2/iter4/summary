@@ -1,0 +1,129 @@
+1)
+run it
+
+2)
+i:1  process ID:9436 
+            v
+            v
+i:2  process ID:9437
+            v
+            v
+i:3  process ID:9438
+            v
+            v
+i:4  process ID:9439
+
+3)
+Experiment with different numbers of processes, observe the processes adopted by init. what is the maximum amount of processes?
+	most processes are adopted by init, I was unable to reach a maximum.
+
+4)
+Place sleep(10) before the fprintf. What is the maximum number of processes?
+	I'm not sure I don't really want to test it since I'll have to 
+	wait 10n quantums approximately to see the end result. 
+
+5)
+08:38 PM [porko@kame-house:iter3] ./simplechain 2 2 2
+i:2  process ID:8369  parent ID:8368  child ID:0
+i:1  process ID:8368  parent ID:2228  child ID:8369
+i:2  process ID:8369  parent ID:8368  child ID:0
+i:1  process ID:8368  parent ID:2228  child ID:8369
+
+08:40 PM [porko@kame-house:iter3] ./simplechain 15 1 2
+i:1  process ID:8436  parent ID:2228  child ID:8437
+i:3  process ID:8438  parent ID:8437  child ID:8439
+i:15  process ID:8450  parent ID:8449  child ID:0
+i:5  process ID:8440  parent ID:8439  child ID:8441
+i:14  process ID:8449  parent ID:8448  child ID:8450
+i:2  process ID:8437  parent ID:1  child ID:8438
+i:4  process ID:8439  parent ID:8438  child ID:8440
+i:6  process ID:8441  parent ID:8440  child ID:8442
+i:8  process ID:8443  parent ID:8442  child ID:8444
+i:10  process ID:8445  parent ID:8444  child ID:8446
+i:11  process ID:8446  parent ID:8445  child ID:8447
+i:9  process ID:8444  parent ID:8443  child ID:8445
+i:7  process ID:8442  parent ID:8441  child ID:8443
+i:13  process ID:8448  parent ID:8447  child ID:8449
+i:12  process ID:8447  parent ID:8446  child ID:8448
+
+6) Put a wait call before fprintf.
+Printed in reverse order, every parent waited for their child.
+08:54 PM [porko@kame-house:iter4] ./simplechain 20 2
+i:20  process ID:8860  parent ID:8859  child ID:0
+i:20  process ID:8860  parent ID:8859  child ID:0
+i:19  process ID:8859  parent ID:8858  child ID:8860
+i:19  process ID:8859  parent ID:8858  child ID:8860
+i:18  process ID:8858  parent ID:8857  child ID:8859
+i:18  process ID:8858  parent ID:8857  child ID:8859
+i:17  process ID:8857  parent ID:8856  child ID:8858
+i:17  process ID:8857  parent ID:8856  child ID:8858
+i:16  process ID:8856  parent ID:8855  child ID:8857
+i:16  process ID:8856  parent ID:8855  child ID:8857
+i:15  process ID:8855  parent ID:8854  child ID:8856
+i:15  process ID:8855  parent ID:8854  child ID:8856
+i:14  process ID:8854  parent ID:8853  child ID:8855
+i:14  process ID:8854  parent ID:8853  child ID:8855
+i:13  process ID:8853  parent ID:8852  child ID:8854
+i:13  process ID:8853  parent ID:8852  child ID:8854
+i:12  process ID:8852  parent ID:8851  child ID:8853
+i:12  process ID:8852  parent ID:8851  child ID:8853
+i:11  process ID:8851  parent ID:8850  child ID:8852
+i:11  process ID:8851  parent ID:8850  child ID:8852
+i:10  process ID:8850  parent ID:8849  child ID:8851
+i:10  process ID:8850  parent ID:8849  child ID:8851
+i:9  process ID:8849  parent ID:8848  child ID:8850
+i:9  process ID:8849  parent ID:8848  child ID:8850
+i:8  process ID:8848  parent ID:8847  child ID:8849
+i:8  process ID:8848  parent ID:8847  child ID:8849
+i:7  process ID:8847  parent ID:8846  child ID:8848
+i:7  process ID:8847  parent ID:8846  child ID:8848
+i:6  process ID:8846  parent ID:8845  child ID:8847
+i:6  process ID:8846  parent ID:8845  child ID:8847
+i:5  process ID:8845  parent ID:8844  child ID:8846
+i:5  process ID:8845  parent ID:8844  child ID:8846
+i:4  process ID:8844  parent ID:8843  child ID:8845
+i:4  process ID:8844  parent ID:8843  child ID:8845
+i:3  process ID:8843  parent ID:8842  child ID:8844
+i:3  process ID:8843  parent ID:8842  child ID:8844
+i:2  process ID:8842  parent ID:8841  child ID:8843
+i:2  process ID:8842  parent ID:8841  child ID:8843
+i:1  process ID:8841  parent ID:2228  child ID:8842
+i:1  process ID:8841  parent ID:2228  child ID:8842
+
+7) Change the program so that each number in the print statement is printed with four seperate fprintf calls. Can you tell which process generated which part in the line?
+	It looks like it is still printing in the same fashion, I can not 
+	tell which part came from which process but it looks like they
+	are synchronized and nothing is out of order.
+09:31 PM [porko@kame-house:iter4] ./simplechain 10 3
+i:10 process ID:9494 parent ID:9493 child ID:0
+i:10 process ID:9494 parent ID:9493 child ID:0
+i:10 process ID:9494 parent ID:9493 child ID:0
+i:9 process ID:9493 parent ID:9492 child ID:9494
+i:9 process ID:9493 parent ID:9492 child ID:9494
+i:9 process ID:9493 parent ID:9492 child ID:9494
+i:8 process ID:9492 parent ID:9491 child ID:9493
+i:8 process ID:9492 parent ID:9491 child ID:9493
+i:8 process ID:9492 parent ID:9491 child ID:9493
+i:7 process ID:9491 parent ID:9490 child ID:9492
+i:7 process ID:9491 parent ID:9490 child ID:9492
+i:7 process ID:9491 parent ID:9490 child ID:9492
+i:6 process ID:9490 parent ID:9489 child ID:9491
+i:6 process ID:9490 parent ID:9489 child ID:9491
+i:6 process ID:9490 parent ID:9489 child ID:9491
+i:5 process ID:9489 parent ID:9488 child ID:9490
+i:5 process ID:9489 parent ID:9488 child ID:9490
+i:5 process ID:9489 parent ID:9488 child ID:9490
+i:4 process ID:9488 parent ID:9487 child ID:9489
+i:4 process ID:9488 parent ID:9487 child ID:9489
+i:4 process ID:9488 parent ID:9487 child ID:9489
+i:3 process ID:9487 parent ID:9486 child ID:9488
+i:3 process ID:9487 parent ID:9486 child ID:9488
+i:3 process ID:9487 parent ID:9486 child ID:9488
+i:2 process ID:9486 parent ID:9485 child ID:9487
+i:2 process ID:9486 parent ID:9485 child ID:9487
+i:2 process ID:9486 parent ID:9485 child ID:9487
+i:1 process ID:9485 parent ID:2228 child ID:9486
+i:1 process ID:9485 parent ID:2228 child ID:9486
+i:1 process ID:9485 parent ID:2228 child ID:9486
+
+8) 

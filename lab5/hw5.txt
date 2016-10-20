@@ -1,0 +1,131 @@
+barrierclient.c Code:
+int i;
+volatile int ret = 0;
+pid_t childpid;
+char *bname;
+
+int main(int argc, char **argv) {	
+	if (argc != 2) {
+		printf("Usage barrierclient [barrier]\n");
+		return 0;
+	}
+	printf("Client started..\n");
+
+	bname = argv[1];
+	ret = waitatbarrier(bname);
+
+	printf("..Client exited\n");
+}
+
+barrierfan.c Code:
+int main  (int argc, char *argv[]) {
+	char reqbuf[256];
+	char relbuf[] = "g";
+	char *req;
+	char *rel;
+	int reqfd, relfd; 
+	pid_t childpid = 0;
+	int fd[2]; 
+	int i, n;
+
+	if (argc != 3){
+		/* check for valid number of command-line arguments */
+		fprintf (stderr, "Usage: %s name processes\n", argv[0]);
+		return 1;
+	}
+
+	n = atoi(argv[2]);
+	req = malloc(sizeof(char)*(strlen(argv[FIFOARG])+10));
+	rel = malloc(sizeof(char)*(strlen(argv[FIFOARG])+10));
+	strcpy(req,argv[FIFOARG]);
+	strcpy(rel,argv[FIFOARG]);
+	strcat(req,".request");
+	strcat(rel,".release");
+
+	if ((mkfifo(req, FIFO_PERMS) == -1) && (errno != EEXIST)) {
+		perror("Failed to create the request FIFO");
+		return 1;
+	}
+
+	if ((mkfifo(rel, FIFO_PERMS) == -1) && (errno != EEXIST)) {
+		perror("Failed to create the release FIFO");
+		return 1;
+	}
+
+	while(1) {
+		if ((reqfd = open(req, O_RDWR)) == -1) {
+			perror("Server Failed to open request FIFO");
+		}
+
+		for (i=0; i < n; i++) {
+			if (read(reqfd, reqbuf, 1) == -1) {
+				perror("Server Failed to read from request");
+			}
+			write(STDOUT_FILENO, reqbuf, 1);
+		}
+
+		if (reqfd > 0)
+			close(reqfd);
+	
+		if ((relfd = open(rel, O_WRONLY)) == -1)
+			perror("Server Failed to open release FIFO");
+		for (i = 0; i < n; i++) {
+			if (write(relfd, relbuf, 1) == -1) {
+				perror("Server Failed to write synchronization characters");
+			}
+			write(STDOUT_FILENO, relbuf, 1);
+		}
+	
+		if (relfd > 0)
+			close(relfd);	
+	}
+	free(rel);
+	free(req);
+	return (childpid == -1);
+}
+
+waitatbarrier.c Code:
+int waitatbarrier(char *name) {
+	char *req = malloc(sizeof(char)*(strlen(name)+10));
+	char *rel = malloc(sizeof(char)*(strlen(name)+10));
+	int reqfd, relfd; 
+	char buf[] = "c";
+	char relbuf[] = "";
+	strcpy(req, name);
+	strcpy(rel, name);
+
+	strcat(req, ".request");
+	strcat(rel, ".release");
+		
+	while(1) {
+		if ((reqfd = open(req, O_WRONLY)) == -1 && (errno != EEXIST)) {
+			perror("Client Failed to open request FIFO");
+		}
+		if (write(reqfd, buf, 1) == -1) {
+			perror("Client Failed to read from request");
+			return -1;
+		}
+		
+		if (reqfd > 0)
+			close(reqfd);
+		
+		if ((relfd = open(rel, O_RDWR)) == -1) { 
+			perror("Client Failed to open release FIFO");
+		}
+		if (read(relfd, relbuf, 1) == -1) {
+			perror("Client Failed to read synchronization characters");
+			return -1;
+		}
+		if (relfd > 0 && strlen(relbuf) == 1)
+			write(STDOUT_FILENO, relbuf, 1);
+			close(relfd);
+	}
+
+	free(rel);
+	free(req);
+	return 0;
+}
+
+summary:
+From the input ./barrierfan mybarrier 4, a fifo is created for request and release of processes waiting at the barrier.
+For this input you expect some output like ccccgggg for every iteration. Likewise, for 5 processes you would see cccccggggg. Clients waiting at the barrier print c's to the request fifo, once n c's are read, n g's are written to the release where the client is blocked on a read call. Once the client reads a g from the release fifo it loops back and writes a c to the request fifo, although I would rather have written it in a way that didn't loop forever client side.

@@ -1,0 +1,39 @@
+Ring Exploration:
+	char out[1];
+
+1. Run it.
+2. Already had a makefile.
+3. ok.
+4. printed inorder, however we return to the prompt before we finish printing.
+5. waits for its children, prints in reverse order. most are adopted.
+6. waits for its children, prints in order. most are adopted.
+7. I'm writing to STDOUT_FILENO, but nothing is printed.
+	 Nothing was printed because the stdout of one process is going to the next process, which is why this is a ring of processes. So to print it out you have to read in from your stdin and then print what you had read.
+
+the end of ring.c:
+prtastr(str, STDOUT_FILENO, 1000);
+read(STDIN_FILENO, out, 1);
+fprintf(stderr, "%s\n", out); 
+
+The functions the steps had us write:
+void wastesometime(int n) {
+	static volatile int dummy = 0;
+	int i;
+	for (i=0; i < n; i++) dummy++;
+}
+
+void prtastr(const char *str, int fd, int n) {
+	int i, b;
+	int len = strlen(str);
+	char strr[255];
+	for(i=0;i<len;i++) {
+		if ((b = write(fd,str,1)) == -1) {
+			sprintf(strr, "Write error [%d]", b);
+			perror(str);
+		}
+		str++;
+	}
+	wastesometime(n);	
+}
+
+As for the fibonacci sequence I think I understand how to get it to work. You'll want to read in a line of text from stdin, starting with "1 1", and then parsing it out my whitespace convert the strings to integers add them. From there you just take the second number, in this case the second 1, and append the new number, here 2, so that you have a string like "1 2", and you'll right that out to stdout for the next process to handle. Once you reach the n'th process you've calculated the n'th fibonacci number. 
